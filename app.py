@@ -53,4 +53,4 @@ def predict():
 
     return render_template("index.html", prediction_text=result)
 
-app.run(host="0.0.0.0", port=81, debug=True)
+app.run(host="0.0.0.0", port=7860, debug=True)
