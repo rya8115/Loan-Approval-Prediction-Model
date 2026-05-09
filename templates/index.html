@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Loan Approval Prediction</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-light: #818cf8;
+      --accent: #06b6d4;
+      --success: #10b981;
+      --danger: #ef4444;
+      --bg: #0f0f1a;
+      --card-bg: rgba(255,255,255,0.04);
+      --card-border: rgba(255,255,255,0.08);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --input-bg: rgba(255,255,255,0.06);
+      --input-border: rgba(255,255,255,0.12);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(79,70,229,.35) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(6,182,212,.25) 0%, transparent 55%);
+      pointer-events: none;
+    }
+    .orb {
+      position: fixed; border-radius: 50%; filter: blur(80px);
+      opacity: .18; pointer-events: none; z-index: 0;
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+    .orb-1 { width: 420px; height: 420px; background: var(--primary); top: -100px; left: -80px; }
+    .orb-2 { width: 300px; height: 300px; background: var(--accent); bottom: -60px; right: -60px; animation-delay: -6s; }
+    @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(30px,20px) scale(1.08); } }
+
+    .page-wrapper { position: relative; z-index: 1; min-height: 100vh; padding: 2rem 1rem 4rem; }
+
+    .site-header { text-align: center; margin-bottom: 2.5rem; }
+    .logo-badge {
+      display: inline-flex; align-items: center; gap: .6rem;
+      background: rgba(79,70,229,.18); border: 1px solid rgba(79,70,229,.4);
+      border-radius: 999px; padding: .4rem 1.1rem; margin-bottom: 1.2rem;
+      font-size: .78rem; font-weight: 600; color: var(--primary-light);
+      letter-spacing: .08em; text-transform: uppercase;
+    }
+    .site-header h1 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800; letter-spacing: -.02em;
+      background: linear-gradient(135deg, #fff 30%, var(--primary-light) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      line-height: 1.15; margin-bottom: .6rem;
+    }
+    .site-header p { color: var(--muted); font-size: 1rem; max-width: 480px; margin: 0 auto; }
+
+    .main-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 2.5rem 2rem;
+      max-width: 860px;
+      margin: 0 auto;
+      box-shadow: 0 25px 60px rgba(0,0,0,.45);
+    }
+
+    .section-label {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--primary-light);
+      margin-bottom: 1.2rem; margin-top: 1.8rem;
+    }
+    .section-label:first-child { margin-top: 0; }
+    .section-label .sep {
+      flex: 1; height: 1px;
+      background: linear-gradient(90deg, rgba(129,140,248,.3), transparent);
+    }
+
+    .field-group { margin-bottom: 1rem; }
+    .field-label {
+      font-size: .78rem; font-weight: 600; color: var(--muted);
+      margin-bottom: .4rem; display: flex; align-items: center; gap: .4rem;
+    }
+    .field-label i { color: var(--primary-light); font-size: .8rem; }
+
+    .input-wrap { position: relative; }
+    .input-wrap .prefix {
+      position: absolute; left: .9rem; top: 50%; transform: translateY(-50%);
+      color: var(--muted); font-size: .85rem; pointer-events: none;
+    }
+    .form-ctrl {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: .92rem;
+      padding: .72rem 1rem .72rem 2.2rem;
+      transition: border-color .2s, background .2s, box-shadow .2s;
+      outline: none;
+    }
+    .form-ctrl::placeholder { color: rgba(148,163,184,.45); }
+    .form-ctrl:focus {
+      border-color: var(--primary);
+      background: rgba(79,70,229,.1);
+      box-shadow: 0 0 0 3px rgba(79,70,229,.18);
+    }
+
+    .toggle-row { display: flex; gap: .5rem; }
+    .toggle-btn {
+      flex: 1; padding: .65rem; border-radius: 10px; cursor: pointer;
+      border: 1px solid var(--input-border); background: var(--input-bg);
+      color: var(--muted); font-size: .82rem; font-weight: 600;
+      transition: all .2s; text-align: center; user-select: none;
+    }
+    .toggle-btn:hover { border-color: var(--primary-light); color: var(--primary-light); }
+    .toggle-btn.active { background: rgba(79,70,229,.22); border-color: var(--primary); color: #fff; }
+    .toggle-input { display: none; }
+
+    .submit-btn {
+      display: flex; align-items: center; justify-content: center; gap: .7rem;
+      width: 100%; padding: .95rem 1.5rem; margin-top: 2rem;
+      background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+      border: none; border-radius: 12px; cursor: pointer;
+      font-size: 1rem; font-weight: 700; color: #fff; letter-spacing: .02em;
+      box-shadow: 0 8px 28px rgba(79,70,229,.45);
+      transition: transform .2s, box-shadow .2s, opacity .2s;
+    }
+    .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(79,70,229,.55); }
+    .submit-btn:active { transform: translateY(0); opacity: .9; }
+
+    .result-banner {
+      margin-top: 1.8rem; border-radius: 14px; padding: 1.2rem 1.5rem;
+      display: flex; align-items: center; gap: 1rem;
+      border: 1px solid; animation: slideUp .4s ease;
+    }
+    .result-banner.approved { background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.35); }
+    .result-banner.rejected { background: rgba(239,68,68,.1); border-color: rgba(239,68,68,.35); }
+    .result-banner .icon {
+      width: 42px; height: 42px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+    .approved .icon { background: rgba(16,185,129,.2); color: var(--success); }
+    .rejected .icon { background: rgba(239,68,68,.2); color: var(--danger); }
+    .result-text strong { font-size: 1rem; font-weight: 700; display: block; }
+    .result-text span { font-size: .82rem; color: var(--muted); }
+    .approved .result-text strong { color: var(--success); }
+    .rejected .result-text strong { color: var(--danger); }
+    .result-plain {
+      margin-top: 1.8rem; border-radius: 14px; padding: 1.1rem 1.4rem;
+      background: rgba(255,255,255,.05); border: 1px solid var(--card-border);
+      font-size: .95rem; color: var(--text); animation: slideUp .4s ease;
+    }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    .site-footer { text-align: center; margin-top: 2.5rem; color: var(--muted); font-size: .78rem; }
+
+    @media (max-width: 576px) {
+      .main-card { padding: 1.6rem 1.2rem; border-radius: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="page-wrapper">
+
+  <header class="site-header">
+    <div class="logo-badge"><i class="fa-solid fa-chart-pie"></i>&nbsp; AI-Powered Fintech</div>
+    <h1>Loan Approval Prediction</h1>
+    <p>Fill in your financial details below and get an instant eligibility assessment.</p>
+  </header>
+
+  <div class="main-card">
+    <form action="/predict" method="post" id="loanForm">
+
+      <!-- PERSONAL -->
+      <div class="section-label"><i class="fa-solid fa-user-circle"></i> Personal Details <span class="sep"></span></div>
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <div class="field-group">
+            <div class="field-label"><i class="fa-solid fa-people-group"></i> Number of Dependents</div>
+            <div class="input-wrap">
+              <span class="prefix"><i class="fa-solid fa-hashtag"></i></span>
+              <input class="form-ctrl" type="number" name="no_of_dependents" placeholder="e.g. 2" min="0" required />
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="field-group">
+            <div class="field-label"><i class="fa-solid fa-briefcase"></i> Self Employed</div>
+            <div class="toggle-row">
+              <label class="toggle-btn"><input class="toggle-input" type="radio" name="self_employed" value="1" /> Yes</label>
+              <label class="toggle-btn"><input class="toggle-input" type="radio" name="self_employed" value="0" /> No</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+     <!-- EDUCATION -->
+<div class="section-label"><i class="fa-solid fa-graduation-cap"></i> Education <span class="sep"></span></div>
+<div class="row g-3">
+  <div class="col-sm-6">
+    <div class="field-group">
+      <div class="field-label"><i class="fa-solid fa-graduation-cap"></i> Are you a Graduate?</div>
+      <div class="toggle-row">
+        <label class="toggle-btn"><input class="toggle-input" type="radio" name="education_graduate" value="1" id="grad-yes" /> Yes</label>
+        <label class="toggle-btn"><input class="toggle-input" type="radio" name="education_graduate" value="0" id="grad-no" /> No</label>
+      </div>
+      <!-- Hidden field Flask still needs -->
+      <input type="hidden" name="education_not_graduate" id="not-grad-hidden" value="0" />
+    </div>
+  </div>
+</div>
+      <!-- FINANCIAL -->
+      <div class="section-label"><i class="fa-solid fa-indian-rupee-sign"></i> Financial Details <span class="sep"></span></div>
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <div class="field-group">
+            <div class="field-label"><i class="fa-solid fa-wallet"></i> Annual Income</div>
+            <div class="input-wrap">
+              <span class="prefix">&#8377;</span>
+              <input class="form-ctrl" type="number" name="income_annum" placeholder="e.g. 800000" min="0" required />
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="field-group">
+            <div class="field-label"><i class="fa-solid fa-landmark"></i> Loan Amount</div>
+            <div class="input-wrap">
+              <span class="prefix">&#8377;</span>
+              <input class="form-ctrl" type="number" name="loan_amount" placeholder="e.g. 2500000" min="0" required />
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="field-group">
+            <div class="field-label"><i class="fa-solid fa-calendar-days"></i> Loan Term (months)</div>
+            <div class="input-wrap">
+              <span class="prefix"><i class="fa-solid fa-clock"></i></span>
+              <input class="form-ctrl" type="number" name="loan_term" placeholder="e.g. 12" min="1" required />
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="field-group">
+            <div class="field-label"><i class="fa-solid fa-gauge-high"></i> CIBIL Score</div>
+            <div class="input-wrap">
+              <span class="prefix"><i class="fa-solid fa-star"></i></span>
+              <input class="form-ctrl" type="number" name="cibil_score" placeholder="300 – 900" min="300" max="900" required />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ASSETS -->
+      <div class="section-label"><i class="fa-solid fa-building-columns"></i> Asset Details <span class="sep"></span></div>
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <div class="field-group">
+            <div class="field-label"><i class="fa-solid fa-house"></i> Residential Assets Value</div>
+            <div class="input-wrap">
+              <span class="prefix">&#8377;</span>
+              <input class="form-ctrl" type="number" name="residential_assets_value" placeholder="e.g. 1500000" min="0" />
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="field-group">
+            <div class="field-label"><i class="fa-solid fa-shop"></i> Commercial Assets Value</div>
+            <div class="input-wrap">
+              <span class="prefix">&#8377;</span>
+              <input class="form-ctrl" type="number" name="commercial_assets_value" placeholder="e.g. 800000" min="0" />
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="field-group">
+            <div class="field-label"><i class="fa-solid fa-gem"></i> Luxury Assets Value</div>
+            <div class="input-wrap">
+              <span class="prefix">&#8377;</span>
+              <input class="form-ctrl" type="number" name="luxury_assets_value" placeholder="e.g. 300000" min="0" />
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="field-group">
+            <div class="field-label"><i class="fa-solid fa-piggy-bank"></i> Bank Asset Value</div>
+            <div class="input-wrap">
+              <span class="prefix">&#8377;</span>
+              <input class="form-ctrl" type="number" name="bank_asset_value" placeholder="e.g. 200000" min="0" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn">
+        <i class="fa-solid fa-robot"></i>
+        Analyse &amp; Predict Eligibility
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+
+    </form>
+
+    <!-- RESULT — Jinja2 renders this server-side -->
+    {% if prediction_text %}
+      {% if 'Approved' in prediction_text or 'approved' in prediction_text %}
+        <div class="result-banner approved">
+          <div class="icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="result-text">
+            <strong>Loan Approved</strong>
+            <span>{{ prediction_text }}</span>
+          </div>
+        </div>
+      {% elif 'Rejected' in prediction_text or 'rejected' in prediction_text %}
+        <div class="result-banner rejected">
+          <div class="icon"><i class="fa-solid fa-circle-xmark"></i></div>
+          <div class="result-text">
+            <strong>Loan Rejected</strong>
+            <span>{{ prediction_text }}</span>
+          </div>
+        </div>
+      {% else %}
+        <div class="result-plain">
+          <i class="fa-solid fa-info-circle" style="color:var(--primary-light);margin-right:.5rem;"></i>
+          {{ prediction_text }}
+        </div>
+      {% endif %}
+    {% endif %}
+
+  </div><!-- /main-card -->
+
+  <footer class="site-footer">
+    Powered by Random Forest ML &nbsp;&middot;&nbsp; Results are indicative only
+  </footer>
+
+</div><!-- /page-wrapper -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Highlight active toggle button
+  document.querySelectorAll('.toggle-row').forEach(row => {
+    const btns = row.querySelectorAll('.toggle-btn');
+    btns.forEach(btn => {
+      const radio = btn.querySelector('input[type="radio"]');
+      radio.addEventListener('change', () => {
+        btns.forEach(b => b.classList.remove('active'));
+        if (radio.checked) btn.classList.add('active');
+      });
+    });
+  });
+
+  // Loading state on submit
+  document.getElementById('loanForm').addEventListener('submit', function () {
+    const btn = this.querySelector('.submit-btn');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analysing...';
+    btn.disabled = true;
+  });
+  document.querySelectorAll('input[name="education_graduate"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    // If graduate=1, not_graduate=0 and vice versa
+    document.getElementById('not-grad-hidden').value = radio.value === '1' ? '0' : '1';
+  });
+});
+</script>
+
+</body>
+</html>
